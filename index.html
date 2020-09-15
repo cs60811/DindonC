@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Init - Google Maps API demo - Augustus - Let's Write</title>
+    <link rel="canonical" href="https://letswrite.tw/google-map-api-marker-custom/">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+	<!-- 引入样式 -->
+	<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+
+    <style>
+      .container {
+        padding-top: 30px;
+        padding-bottom: 30px;
+      }
+      #map {
+        background: #CCC;
+      }
+      .fixed-bottom {
+        position: fixed;
+        left: 16px;
+        bottom: 0;
+        max-width: 320px;
+      }
+	  .el-row {
+		margin-bottom: 22px;
+	  }
+	  .descHTML img{
+		width : 100%;
+	  }
+
+    </style>
+
+    
+  </head>
+  <body>
+
+
+    <div id="app" class="container">
+
+		<el-tabs v-model="activeName" @tab-click="handleClick">
+		<el-tab-pane label="我要當團主" name="first">
+			<el-form
+			  :model="myFormGroup"
+			  :rules="rules"
+			  ref="myFormGroup" 
+			  label-width="100px"
+			  id="myFormGroup">
+		  
+
+		  
+			<el-form-item label="ID" hidden>
+				<el-input id="ID"
+						  type="text"
+						  name="ID"
+						  v-model="myFormGroup.ID" 
+						  placeholder="請輸入內容"
+						  clearable
+						  readonly
+						  >
+				</el-input>
+			</el-form-item>
+			
+			<el-form-item label="團名" prop="GroupName">
+				<el-input id="GroupName"
+						  type="text"
+						  name="GroupName"
+						  v-model="myFormGroup.GroupName" 
+						  placeholder="請輸入內容"
+						  clearable>
+				</el-input>
+			</el-form-item>
+			
+			<el-form-item label="揪團說明" prop="Description">
+				<el-input id="Description"
+						  :rows="2"
+						  type="textarea"
+						  name="Description"
+						  v-model="myFormGroup.Description" 
+						  placeholder="請輸入內容"
+						  clearable>
+				</el-input>
+			</el-form-item>
+			
+			<el-form-item label="接單起迄" prop="dateTimeRange">
+				<el-date-picker
+				  @change="ChangeDateTimeRange"
+				  v-model="myFormGroup.dateTimeRange"
+				  type="datetimerange"
+				  align="right"
+				  start-placeholder="開始時間"
+				  end-placeholder="結束時間"
+				  :picker-options="StartTimeOptions"
+				  :default-time="['08:30:00', '17:30:00']">
+				</el-date-picker>
+			</el-form-item>
+				
+			<el-form-item label="接單時間" prop="StartTime" hidden>
+				<el-date-picker
+				  v-model="myFormGroup.StartTime"
+				  type="datetime"
+				  placeholder="選擇開始時間"
+				  default-time="08:30:00"
+				  :picker-options="StartTimeOptions">
+				</el-date-picker>
+			</el-form-item>
+			
+			<el-form-item label="結單時間" prop="EndTime" hidden>
+				<el-date-picker
+				  v-model="myFormGroup.EndTime"
+				  type="datetime"
+				  placeholder="選擇結單時間"
+				  :picker-options="EndTimeOptions"
+				  default-time="17:30:00">
+				</el-date-picker>
+
+			</el-form-item>
+			
+			<el-form-item label="團主" prop="LeaderName" >
+				<el-input id="LeaderName"
+						  type="text"
+						  name="LeaderName"
+						  v-model="myFormGroup.LeaderName" 
+						  placeholder="請輸入內容"
+						  clearable>
+				</el-input>
+			</el-form-item>
+			
+			<el-form-item label="團主密碼" prop="LeaderPassword">
+				<el-input id="LeaderPassword"
+						  type="text"
+						  name="LeaderPassword"
+						  v-model="myFormGroup.LeaderPassword" 
+						  placeholder="請輸入內容"
+						  clearable>
+				</el-input>
+			</el-form-item>
+			
+			
+			<el-form-item>
+				<el-button  type="primary"
+							@click="CheckNewGroup"
+							v-loading.fullscreen.lock="LodingFlag">
+							開團!
+				</el-button>
+			</el-form-item>
+				
+
+
+			</el-form>
+		</el-tab-pane>
+			<el-tab-pane label="我要訂東西" name="second">
+			
+			
+				<el-row :gutter="20" style="margin-bottom: 22px;">
+				  <el-col :span="22">
+					  <div v-on:keyup.enter="CheckGID" class="grid-content bg-purple">
+						<el-input id="GID"
+									type="text"
+									name="GID"
+									v-model="SecondPageGroup.GID" 
+									placeholder="請輸入識別碼"
+									clearable
+									
+									@change="CheckGroupStatus=false">
+						</el-input>
+					  </div>
+				  </el-col>
+				  <el-col :span="2">
+					  <div class="grid-content bg-purple">
+						<el-button  type="primary"
+									icon="el-icon-search" 
+									@click="CheckGID"
+									v-loading.fullscreen.lock="LodingFlag"
+									circle >
+						</el-button>
+					  </div>
+				  </el-col>
+				</el-row>
+					<el-row :gutter="24" style="margin-bottom: 22px;">
+						
+					</el-col>
+				<el-col :span="24">
+					<el-card class="box-card" v-if="JGroupName != null">
+						<p>團名 : {{JGroupName}}</p>
+						<p>團主 : {{JLeaderName}}</p>
+						<p>接單時間 : {{JDateRnage}}</p>
+						<p>開團說明 : </p>
+						<div class="descHTML" v-html="JDescription" style="width : 100%;"></div>
+					</el-card>
+				</el-row>
+				
+				<el-divider></el-divider>
+				
+				<el-row :gutter="20" v-if="CheckGroupStatus">
+					<el-col :span="24">
+						<div class="grid-content bg-purple-dark">
+							<el-form
+							  :model="SecondPageGroup"
+							  :rules="rules"
+							  ref="SecondPageGroup" 
+							  label-width="100px"
+							  id="SecondPageGroup">
+						  
+						    
+
+						  
+							<el-form-item label="GID" >
+								<el-input id="GID"
+										  type="text"
+										  name="GID"
+										  v-model="SecondPageGroup.GID" 
+										  placeholder="請輸入內容"
+										  readonly
+										  >
+								</el-input>
+							</el-form-item>
+							
+							<el-form-item label="需要的商品" prop="ItemName">
+								<el-input id="ItemName"
+										  type="text"
+										  name="ItemName"
+										  v-model="SecondPageGroup.ItemName" 
+										  placeholder="請輸入內容"
+										  clearable>
+								</el-input>
+							</el-form-item>
+							
+							<el-form-item label="數量" >
+								<el-input-number size="mini" v-model="SecondPageGroup.Count">
+								</el-input-number>
+							</el-form-item>
+							
+							<el-form-item label="取貨人" prop="MemberName">
+								<el-input id="MemberName"
+										  type="text"
+										  name="MemberName"
+										  v-model="SecondPageGroup.MemberName" 
+										  placeholder="請輸入內容"
+										  clearable>
+								</el-input>
+							</el-form-item>
+							
+							<el-form-item label="取貨人密碼" >
+								<el-input id="MemberPassword"
+										  type="text"
+										  name="MemberPassword"
+										  v-model="SecondPageGroup.MemberPassword" 
+										  placeholder="請輸入內容"
+										  clearable>
+								</el-input>
+							</el-form-item>
+							
+							
+							<el-form-item label="其他說明" prop="Description">
+								<el-input id="Description"
+										  :rows="2"
+										  type="textarea"
+										  name="Description"
+										  v-model="SecondPageGroup.Description" 
+										  placeholder="請輸入內容"
+										  clearable>
+								</el-input>
+							</el-form-item>
+							
+						
+							
+							
+							<el-form-item>
+								<el-button @click="CheckSecondGroup" v-loading.fullscreen.lock="LodingFlag">訂!</el-button>
+							</el-form-item>
+								
+
+
+							</el-form>
+						</div>
+					</el-col>
+				</el-row>
+				
+				
+				
+				
+			</el-tab-pane>
+			
+			<el-tab-pane label="管理揪團" name="third">
+				
+				<el-container>
+					<el-header height="30px">
+						Header
+					</el-header>
+					
+					<el-main>
+						<el-divider></el-divider>
+						<el-row>
+							<el-col :span="24" >
+								<el-radio-group v-model="rdoMemType" @change="clearTableData">
+									<el-radio label="Master" >我是團主</el-radio>
+									<el-radio label="Member" >我是團員</el-radio>
+								</el-radio-group>
+							</el-col>
+						</el-row>
+						<el-row>
+							<el-col :span="24">
+								<el-input placeholder="請輸入名稱" v-model="M_Name" ></el-input>
+							</el-col>
+						</el-row>
+						<el-row  >
+							<el-col :span="24" >
+								<div v-on:keyup.enter="SearchUserDetail">
+									<el-input placeholder="請輸入密碼" v-model="M_Password"  show-password>
+										<el-button slot="append" icon="el-icon-search" @click="SearchUserDetail"></el-button>
+									</el-input>
+								</div>
+								
+							</el-col>
+						</el-row>
+						<el-divider></el-divider>
+						<el-row>
+							<el-col :span="24">
+									<el-card class="box-card" v-if="rdoMemType=='Member'">
+									  <div slot="header" class="clearfix">
+										<span>詳細資料</span>
+										<el-button style="float: right; padding: 3px 0" type="text">操作按钮</el-button>
+									  </div>
+									  <div>
+
+										<el-table 
+											highlight-current-row
+											:data="tableData"
+											stripe
+											style="width: 100%"
+											empty-text="無資料">
+											<el-table-column
+											  prop="id"
+											  label="id"
+											  v-if="false"
+											  >
+											</el-table-column>
+											
+											<el-table-column
+											  prop="updateDate"
+											  label="加入日期"
+											  width="180"
+											  :formatter="Dateformatter">
+											</el-table-column>
+											<el-table-column
+											  prop="memberName"
+											  label="訂購人"
+											  width="180">
+											</el-table-column>
+											<el-table-column
+											  prop="itemName"
+											  label="物品名稱"
+											  width="180">
+											</el-table-column>
+											<el-table-column
+											  prop="count"
+											  label="數量">
+											</el-table-column>
+											<el-table-column
+											  prop="description"
+											  label="內容">
+											</el-table-column>
+											<el-table-column
+												width="180"
+												prop="action"
+												label="動作">
+												<template slot-scope="scope">
+													<el-button icon="el-icon-view" @click="viewGroupDetail(scope.row)" size="small" circle></el-button>
+													<el-button icon="el-icon-delete" @click="deleteOrder(scope.row)" size="small" circle></el-button>
+												</template>
+											</el-table-column>
+										</el-table>
+										
+									  </div>
+									</el-card>
+								<el-card class="box-card" v-if="rdoMemType=='Master'">
+									  <div slot="header" class="clearfix">
+										<span>詳細資料</span>
+										<el-button style="float: right; padding: 3px 0" type="text">操作按钮</el-button>
+									  </div>
+									  <div>
+
+										<el-table 
+											highlight-current-row
+											:data="tableDataOfGroup"
+											stripe
+											style="width: 100%"
+											empty-text="無資料">
+											<el-table-column
+											  prop="id"
+											  label="id"
+											  v-if="false"
+											  >
+											</el-table-column>
+											
+											<el-table-column
+											  prop="startTime"
+											  label="接單時間起"
+											  width="180"
+											  :formatter="Dateformatter">
+											</el-table-column>
+											<el-table-column
+											  prop="endTime"
+											  label="接單時間迄"
+											  width="180"
+											  :formatter="Dateformatter">
+											</el-table-column>
+											<el-table-column
+											  prop="leaderName"
+											  label="團主"
+											  width="180">
+											</el-table-column>
+											<el-table-column
+											  prop="groupName"
+											  label="團名"
+											  width="180">
+											</el-table-column>
+											<el-table-column
+											  prop="description"
+											  label="揪團說明">
+											</el-table-column>
+											<el-table-column
+												width="180"
+												prop="action"
+												label="動作">
+												<template slot-scope="scope">
+													<el-button icon="el-icon-view" @click="viewGroupDetail(scope.row)" size="small" circle></el-button>
+													<el-button icon="el-icon-edit" @click="editGroup(scope.row)" size="small" circle></el-button>
+													<el-button icon="el-icon-delete" @click="DeleteGroup(scope.row)" size="small" circle></el-button>
+												</template>
+											</el-table-column>
+										</el-table>
+										
+									  </div>
+									</el-card>	
+							</el-col>
+						</el-row>
+						<el-row>
+							<el-col :span="24">
+								
+							</el-col>
+						</el-row>
+						
+					</el-main>
+				</el-container>
+				<el-dialog title="詳細資料" :visible.sync="DetailVisibleFlag" @close="DetailVisibleClose" >
+					<div slot="title" style="padding-right: 20pt;">
+						<span 
+						  style="line-height: 24px;
+								font-size: 18px;
+								color: #303133">
+								詳細資料
+						</span>
+						<span style="float: right;">
+							<el-tooltip class="item" effect="dark" content="下載團員清單" placement="left-end">
+							  <el-button icon="el-icon-printer" @click="downloadDetailExcel" size="small"  circle></el-button>
+							</el-tooltip>
+						</span>
+					</div>
+
+					<div>
+						<el-row>
+							<el-col :span="24" >
+								<span 
+								  style="line-height: 24px;
+										font-size: 16px;
+										color: #303133">
+										揪團基本資料
+								</span>
+							</el-col>
+						</el-row>
+						<el-row>
+							<el-col :span="4" >
+								<span> ID :</span>
+							</el-col>
+							<el-col :span="20" >
+								<span 
+								  style="line-height: 24px;
+										font-size: 12px;
+										color: #303133">
+										{{ViewGroupDetail.ID}}
+								</span>
+								<span>
+									<el-button icon="el-icon-copy-document" size="mini" @click="CopyStringToClipBoard(ViewGroupDetail.ID,'URL')" circle></el-button>
+								</span>
+							</el-col>
+						</el-row>
+						<el-row>
+							<el-col :span="4" >
+								<span> 團名 :</span>
+							</el-col>
+							<el-col :span="20" >
+								<span 
+								  style="line-height: 24px;
+										font-size: 12px;
+										color: #303133">
+										{{ViewGroupDetail.GroupName}}
+								</span>
+							</el-col>
+						</el-row>
+						<el-row>
+							<el-col :span="4" >
+								<span> 揪團說明 :</span>
+							</el-col>
+							<el-col :span="20" >
+								<div class="descHTML" v-html="ViewGroupDetail.Description" style="width : 100%;"></div>
+							</el-col>
+						</el-row>
+						<el-row>
+							<el-col :span="4" >
+								<span> 接單起迄 :</span>
+							</el-col>
+							<el-col :span="20" >
+								<span 
+								  style="line-height: 24px;
+										font-size: 12px;
+										color: #303133">
+										{{ViewGroupDetail.StartTime}} ~ {{ViewGroupDetail.EndTime}}
+								</span>
+							</el-col>
+						</el-row>
+						<el-row>
+							<el-col :span="4" >
+								<span> 團主 :</span>
+							</el-col>
+							<el-col :span="20" >
+								<span 
+								  style="line-height: 24px;
+										font-size: 12px;
+										color: #303133">
+										{{ViewGroupDetail.LeaderName}}
+								</span>
+							</el-col>
+						</el-row>
+
+					</div>
+					<el-table empty-text="沒有人參與"
+							  :data="TblDetail">
+					
+						<el-table-column label="No" type="index"></el-table-column>
+						<el-table-column property="id" label="id" width="150" v-if="false"></el-table-column>
+						<el-table-column property="memberName" width="200" label="下單者"></el-table-column>
+						<el-table-column property="itemName" label="物品名稱" ></el-table-column>
+						
+						<el-table-column property="updateDate" width="200" label="更新時間" >
+						</el-table-column>
+					</el-table>
+					  
+				  
+				</el-dialog>
+				
+				<el-dialog title="編輯揪團資料" :visible.sync="editGroupVisibleFlag" :close-on-click-modal="false">
+					<div slot="title" style="padding-right: 20pt;">
+						<span 
+						  style="line-height: 24px;
+								font-size: 18px;
+								color: #303133">
+								編輯揪團資料
+						</span>
+						<span style="float: right;">
+								<el-button icon="el-icon-printer" @click="downloadDetailExcel" size="small"  circle></el-button>
+						</span>
+					</div>
+
+					
+					<el-form
+					  :model="editGroupForm"
+					  :rules="rules"
+					  ref="editGroupForm" 
+					  label-width="100px"
+					  id="editGroupForm">
+				  
+
+				  
+					<el-form-item label="ID" hidden>
+						<el-input id="ID"
+								  type="text"
+								  name="ID"
+								  v-model="editGroupForm.ID" 
+								  placeholder="請輸入內容"
+								  clearable
+								  readonly
+								  >
+						</el-input>
+					</el-form-item>
+					
+					<el-form-item label="團名" prop="GroupName">
+						<el-input id="GroupName"
+								  type="text"
+								  name="GroupName"
+								  v-model="editGroupForm.GroupName" 
+								  placeholder="請輸入內容"
+								  clearable>
+						</el-input>
+					</el-form-item>
+					
+					<el-form-item label="揪團說明" prop="Description">
+						<el-input id="Description"
+								  :rows="2"
+								  type="textarea"
+								  name="Description"
+								  v-model="editGroupForm.Description" 
+								  placeholder="請輸入內容"
+								  clearable>
+						</el-input>
+					</el-form-item>
+					
+					<el-form-item label="接單起迄" prop="dateTimeRange">
+						<el-date-picker
+						  @change="ChangeEditDateTimeRange"
+						  v-model="editGroupForm.dateTimeRange"
+						  type="datetimerange"
+						  align="right"
+						  start-placeholder="開始時間"
+						  end-placeholder="結束時間"
+						  :picker-options="StartTimeOptions"
+						  :default-time="['08:30:00', '17:30:00']">
+						</el-date-picker>
+					</el-form-item>
+						
+					<el-form-item label="接單時間" prop="StartTime" hidden>
+						<el-date-picker
+						  v-model="editGroupForm.StartTime"
+						  type="datetime"
+						  placeholder="選擇開始時間"
+						  default-time="08:30:00"
+						  :picker-options="EditStartTimeOptions">
+						</el-date-picker>
+					</el-form-item>
+					
+					<el-form-item label="結單時間" prop="EndTime" hidden>
+						<el-date-picker
+						  v-model="editGroupForm.EndTime"
+						  type="datetime"
+						  placeholder="選擇結單時間"
+						  :picker-options="EditEndTimeOptions"
+						  default-time="17:30:00">
+						</el-date-picker>
+
+					</el-form-item>
+					
+					<el-form-item label="團主" prop="LeaderName" >
+						<el-input id="LeaderName"
+								  type="text"
+								  name="LeaderName"
+								  v-model="editGroupForm.LeaderName" 
+								  placeholder="請輸入內容"
+								  clearable>
+						</el-input>
+					</el-form-item>
+					
+					<el-form-item label="團主密碼" prop="LeaderPassword">
+						<el-input id="LeaderPassword"
+								  type="text"
+								  name="LeaderPassword"
+								  v-model="editGroupForm.LeaderPassword" 
+								  placeholder="請輸入內容"
+								  clearable>
+						</el-input>
+					</el-form-item>
+					
+					
+					<el-form-item>
+						<el-button  type="primary"
+									@click="CheckUpdateGroup"
+									v-loading.fullscreen.lock="LodingFlag">
+									確認修改
+						</el-button>
+					</el-form-item>
+					</el-form>
+				</el-dialog>
+				
+			</el-tab-pane>
+			<el-tab-pane label="其他" name="fourth">其他</el-tab-pane>
+		</el-tabs>
+		
+		
+	
+	
+	
+	  
+
+	</div>
+    
+    
+    
+    <!-- 將 YOUR_API_KEY 替換成你的 API Key 即可 -->
+    <!--<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAiyRJbQX7gj8FIKZbjnpKEUIjViy68XSw" async defer></script>-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.10/vue.min.js"></script>
+	<script src="https://unpkg.com/vue-router"></script>
+	<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" integrity="sha512-ZDSPMa/JM1D+7kdg2x3BsruQ6T/JpJo3jWDWkCZsP+5yVyp1KfESqLI+7RqB5k24F7p2cV7i2YHh/890y6P6Sw==" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.6/xlsx.full.min.js" integrity="sha512-y/6xOMDHnSz1X2azryTilOlwPm/yWBDI9zY87kTAHiaDAl+32nW2kT+1M8TtHDikgVaO0a/XcEujCW8lm2z+Dg==" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/downloadjs/1.4.8/download.min.js" integrity="sha512-WiGQZv8WpmQVRUFXZywo7pHIO0G/o3RyiAJZj8YXNN4AV7ReR1RYWVmZJ6y3H06blPcjJmG/sBpOVZjTSFFlzQ==" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.min.js" integrity="sha512-rmZcZsyhe0/MAjquhTgiUcb4d9knaFc7b5xAfju483gbEXTkeJRUMIPk6s3ySZMYUHEcjKbjLjyddGWMrNEvZg==" crossorigin="anonymous"></script>
+	<script type="text/javascript" src="./mylib.js"></script>
+    
+    
+
+  </body>
+</html>
