@@ -3,8 +3,9 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="訂東西去!">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
-	<title>Init - Google Maps API demo - Augustus - Let's Write</title>
+	<title>DinDonC - 一起來訂東西吧</title>
 	<link rel="canonical" href="https://letswrite.tw/google-map-api-marker-custom/">
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 	<!-- 引入样式 -->
@@ -14,10 +15,6 @@
 		.container {
 			padding-top: 30px;
 			padding-bottom: 30px;
-		}
-
-		#map {
-			background: #CCC;
 		}
 
 		.fixed-bottom {
@@ -33,6 +30,10 @@
 
 		.descHTML img {
 			width: 100%;
+		}
+
+		.el-date-editor.el-input, .el-date-editor.el-input__inner {
+			width: 220px;
 		}
 	</style>
 
@@ -76,7 +77,7 @@
 
 					<el-form-item label="揪團說明" prop="Description">
 						<el-input id="Description"
-								  :rows="2"
+								  :rows="4"
 								  type="textarea"
 								  name="Description"
 								  v-model="myFormGroup.Description"
@@ -86,10 +87,12 @@
 					</el-form-item>
 
 					<el-form-item label="接單起迄" prop="dateTimeRange">
-						<el-date-picker @change="ChangeDateTimeRange"
+						<el-date-picker style="width:auto"
+										@change="ChangeDateTimeRange"
 										v-model="myFormGroup.dateTimeRange"
 										type="datetimerange"
 										align="right"
+										size="large"
 										start-placeholder="開始時間"
 										end-placeholder="結束時間"
 										:picker-options="StartTimeOptions"
@@ -153,33 +156,38 @@
 
 
 				<el-row :gutter="20" style="margin-bottom: 22px;">
-					<el-col :span="20">
-						<div v-on:keyup.enter="CheckGID" class="grid-content bg-purple">
+					<el-col :span="24">
+						<div style="width:70% ;float:left;padding:5px" v-on:keyup.enter="CheckGID">
 							<el-input id="GID"
 									  type="text"
 									  name="GID"
 									  v-model="SecondPageGroup.GID"
-									  placeholder="請輸入識別碼"
+									  placeholder="請輸入邀請碼"
 									  clearable
 									  @change="CheckGroupStatus=false">
 							</el-input>
 						</div>
-					</el-col>
-					<el-col :span="4">
-						<div class="grid-content bg-purple">
-							<el-button type="primary"
-									   icon="el-icon-search"
-									   @click="CheckGID"
-									   v-loading.fullscreen.lock="LodingFlag"
-									   circle>
-							</el-button>
-							<el-button type="primary"
-									   icon="el-icon-camera"
-									   @click="CameraInit"
-									   v-loading.fullscreen.lock="LodingFlag"
-									   circle>
-							</el-button>
+						<div style="width:30%;float:left;">
+							<div style="float:left;padding:5px">
+								<el-button type="primary"
+										   icon="el-icon-search"
+										   @click="CheckGID"
+										   v-loading.fullscreen.lock="LodingFlag"
+										   circle>
+								</el-button>
+							</div>
+							<div style="float:left;padding:5px">
+								<el-button type="primary"
+										   icon="el-icon-camera"
+										   @click="CameraInit"
+										   v-loading.fullscreen.lock="LodingFlag"
+										   circle>
+								</el-button>
+							</div>
 						</div>
+					</el-col>
+					<el-col :span="8">
+
 					</el-col>
 				</el-row>
 				<el-row :gutter="24" style="margin-bottom: 22px;">
@@ -461,10 +469,10 @@
 								<span style="line-height: 24px;
 										font-size: 12px;
 										color: #303133">
-									{{ViewGroupDetail.ID}}
+									{{ViewGroupDetailData.ID}}
 								</span>
 								<span>
-									<el-button icon="el-icon-copy-document" size="mini" @click="CopyStringToClipBoard(ViewGroupDetail.ID,'URL')" circle></el-button>
+									<el-button icon="el-icon-copy-document" size="mini" @click="CopyStringToClipBoard(ViewGroupDetailData.ID,'URL')" circle></el-button>
 								</span>
 							</el-col>
 						</el-row>
@@ -476,7 +484,7 @@
 								<span style="line-height: 24px;
 										font-size: 12px;
 										color: #303133">
-									{{ViewGroupDetail.GroupName}}
+									{{ViewGroupDetailData.GroupName}}
 								</span>
 							</el-col>
 						</el-row>
@@ -485,7 +493,7 @@
 								<span> 揪團說明 :</span>
 							</el-col>
 							<el-col :span="20">
-								<div class="descHTML" v-html="ViewGroupDetail.Description" style="width : 100%;"></div>
+								<div class="descHTML" v-html="ViewGroupDetailData.Description" style="width : 100%;"></div>
 							</el-col>
 						</el-row>
 						<el-row>
@@ -496,7 +504,7 @@
 								<span style="line-height: 24px;
 										font-size: 12px;
 										color: #303133">
-									{{ViewGroupDetail.StartTime}} ~ {{ViewGroupDetail.EndTime}}
+									{{ViewGroupDetailData.StartTime}} ~ {{ViewGroupDetailData.EndTime}}
 								</span>
 							</el-col>
 						</el-row>
@@ -508,7 +516,7 @@
 								<span style="line-height: 24px;
 										font-size: 12px;
 										color: #303133">
-									{{ViewGroupDetail.LeaderName}}
+									{{ViewGroupDetailData.LeaderName}}
 								</span>
 							</el-col>
 						</el-row>
@@ -649,7 +657,7 @@
 		</el-tabs>
 
 
-		<el-dialog title="掃描推薦碼" :visible.sync="CameraDialogFlag" @close="Camestroyed = true">
+		<el-dialog title="掃描推薦碼" :visible.sync="CameraDialogFlag" @close="Camestroyed = true" width="90%">
 			<div>
 				<qrcode-stream @decode="onQRDecode" @init="CameraInit" v-if="!Camestroyed" />
 			</div>

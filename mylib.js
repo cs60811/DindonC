@@ -11,7 +11,7 @@ const app = new Vue({
     data: {
         //WebApiUrl: 'https://localhost:44342/api/DINDONC',
         WebApiUrl: 'https://peterxie.azurewebsites.net/api/DINDONC',
-        rdoMemType: 'Member',
+        rdoMemType: 'Master',
         M_Name: null,
         M_Password: null,
         errors: [],
@@ -20,7 +20,7 @@ const app = new Vue({
         tableData: [],
         DetailVisibleFlag: false,
         editGroupVisibleFlag: false,
-        activeName: 'second',
+        activeName: 'third',
         TblDetail: [],
         JGroupName: null,
         JLeaderName: null,
@@ -55,7 +55,7 @@ const app = new Vue({
             Description: null,
             MemberPassword: null
         },
-        ViewGroupDetail: {
+        ViewGroupDetailData: {
             ID: null,
             GroupName: null,
             Description: null,
@@ -619,7 +619,7 @@ const app = new Vue({
         viewGroupDetail(row) {
             this.LodingFlag = true;
             //抬頭資料
-            var UrlT = this.WebApiUrl + '/' + row.gid;
+            var UrlT = this.WebApiUrl + '/' + row.id;
 
             fetch(UrlT)
                 .then(function (response) {
@@ -628,15 +628,15 @@ const app = new Vue({
                 .then(function (myJson) {
                     console.log(myJson);
 
-                    app.ViewGroupDetail.ID = myJson.id;
-                    app.ViewGroupDetail.GroupName = myJson.groupName;
-                    app.ViewGroupDetail.Description = myJson.description;
-                    app.ViewGroupDetail.StartTime = moment(myJson.startTime).format('YYYY-MM-DD HH:mm:ss');
-                    app.ViewGroupDetail.EndTime = moment(myJson.endTime).format('YYYY-MM-DD HH:mm:ss');
-                    app.ViewGroupDetail.LeaderName = myJson.leaderName;
+                    app.ViewGroupDetailData.ID = myJson.id;
+                    app.ViewGroupDetailData.GroupName = myJson.groupName;
+                    app.ViewGroupDetailData.Description = myJson.description;
+                    app.ViewGroupDetailData.StartTime = moment(myJson.startTime).format('YYYY-MM-DD HH:mm:ss');
+                    app.ViewGroupDetailData.EndTime = moment(myJson.endTime).format('YYYY-MM-DD HH:mm:ss');
+                    app.ViewGroupDetailData.LeaderName = myJson.leaderName;
 
                     //TODO顯示詳細資料
-                    var Url = app.WebApiUrl + '/member/Group/' + row.gid;
+                    var Url = app.WebApiUrl + '/member/Group/' + row.id;
                     fetch(Url)
                         .then(function (response) {
                             return response.json();
@@ -798,12 +798,12 @@ const app = new Vue({
             console.log('ClipBoard : ' + msg);
         },
         DetailVisibleClose() {
-            this.ViewGroupDetail.ID = null;
-            this.ViewGroupDetail.GroupName = null;
-            this.ViewGroupDetail.Description = null;
-            this.ViewGroupDetail.StartTime = null;
-            this.ViewGroupDetail.EndTime = null;
-            this.ViewGroupDetail.LeaderName = null;
+            this.ViewGroupDetailData.ID = null;
+            this.ViewGroupDetailData.GroupName = null;
+            this.ViewGroupDetailData.Description = null;
+            this.ViewGroupDetailData.StartTime = null;
+            this.ViewGroupDetailData.EndTime = null;
+            this.ViewGroupDetailData.LeaderName = null;
 
         },
         onQRDecode(result) {
@@ -814,7 +814,7 @@ const app = new Vue({
                 var attr = result.substr(result.lastIndexOf('?') + 1).split('&');
                 if (attr.length == 2) {
                     var attr1 = attr[0].split('=');
-                    if (attr1.length == 2 && attr1[0] == 'source' && attr1[1] == 'qrcode') {
+                    if (attr1.length == 2 && attr1[0] == 'method' && attr1[1] == 'qrcode') {
                         var attr2 = attr[1].split('=');
                         if (attr2.length == 2 && attr2[0] == 'value') {
                             this.SecondPageGroup.GID = attr2[1];
